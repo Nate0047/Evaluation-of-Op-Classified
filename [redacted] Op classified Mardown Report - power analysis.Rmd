@@ -1,0 +1,119 @@
+---
+title: 'Technical Document for Op [classified]: Power analysis to determine sample size'
+author: "Nathan Birdsall & [classified]"
+date: "12/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# SET LIBRARY PATH -------------------------------------------------------------
+# set librarby to avoid Onedrive:
+.libPaths("C:/R library")
+.libPaths()
+
+
+# INSTALL PACKAGES AND ORGANISE LIBRARY ----------------------------------------
+if(!require("tidyverse")) {install.packages("tidyverse")}
+library(tidyverse)
+if(!require("pwr")) {install.packages("pwr")}
+library(pwr)
+
+# POWER ANALYSIS FOR OP [classified] -------------------------------------------
+# Need three of the four criteria in order to calculate the fourth. 
+pwr::pwr.t.test(d = 0.3,      # Using Cohen's estimate for this test of difference
+                power = 0.80,  # The probability of accepting the alternative hypothesis if it is true (common is .80)
+                sig.level = 0.05,
+                type = "paired",
+                alternative = "two.sided")
+# If weak difference between pre- & post- measures then n = 199 needed
+# If medium difference n = 34 needed. 
+
+# Cohen's effect sizes are seen as rough guidelines:
+pwr::cohen.ES(test = "t", size = "medium")
+# Reference for the effect sizes can be found at:
+# Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.
+
+```
+
+This technical report is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents from R script. For more details on using R Markdown see <http://rmarkdown.rstudio.com>. Please note that `echo = FALSE` parameters were added to the underlying code chunks to prevent printing of the R code that generated the underlying analysis.
+
+
+Introduction
+================================================================================
+Following the implementation of Operation [classified], further research has been planned to examine the views of residents around the [classified] area to examine their views of Anti-Social Behaviour (ASB) and feelings of safety. Measurements will collect residents' views of ASB and safety, asking about their views 12 months ago, as well as now. This aims to create pseudo pre-/post- implementation measurements to examine views following the implementation of Operation [classified]. 
+
+This document concerns a 'power analysis' to determine the sample size needed to detect particular effect sizes when using planned statistical analyses. This was done to ensure efficient use of police resources, as well as the possibility of detecting true differences based on the end sample size collected.
+
+Statistical testing
+================================================================================
+
+Statistical tests are made up of four inter-dependent criteria. They are:
+
+1. Sample size
+2. Effect size
+3. Significance level
+4. Power
+
+Because they are inter-dependent, the estimation of three of these parameters can allow for the determination of the fourth. Power analysis is often used to determine an effective sample size when resources may be scarce or collecting observations/participants is expensive. 
+
+In this instance, the report uses estimates for effect size, significance level and power in order to calculate effective samples sizes for the Op [classified] analysis. 
+
+A number of assumptions are made in order to calculate an effective sample size:
+
+* The data are normally distributed, thus allowing for a paired samples t-test to be conducted
+* Power is set to 0.80 (often used as default)
+* Significance level is set to 0.05 (often used as default in social science)
+* Effect size are scaled between 0-1 (Cohen's D metric). Interpretations are 0.2 = "small"; 0.5 = "medium"; and 0.8 = "large" effect size
+(Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.)
+
+The power and significance level determine the sensitivity towards Type I and Type II errors, and the examination of power in this instance relates to the size of difference in the mean scores relating to pre- and post- measures. Essentially what we are determining through this power analysis is:
+
+"how many survey responses are needed to detect different effect sizes (measured by Cohen's D), with an 80% chance of detecting the effect if it true (20% chance of a Type II error) and a 5% chance of detecting an effect if no such effect exists (5% chance of a Type I error)". 
+
+
+Plotting the Power Curve
+================================================================================
+
+In order to understand the relationship between effect size and sample size, a power curve was computed to visualise the relationship between effect size of possible test results and sample sizes (when holding power constant at 0.80 and sig. level at 0.05).
+
+
+```{r, echo=FALSE}
+effect_size_list <- seq(0.1, 1.0, 0.1) # Cohen's D vector
+samp.out <- NULL
+
+# function to calculate n for each effect size:
+for(i in 1:length(effect_size_list)) {
+  n.xxx <- pwr::pwr.t.test(power = .80, sig.level = 0.05, type = "paired", alternative = "two.sided", d = effect_size_list[i])$n
+  n.xxx <- data.frame(d = effect_size_list[i], sample.size = n.xxx)
+  samp.out <- rbind(samp.out, n.xxx)
+}
+
+# plot results of function
+ggplot(samp.out, aes(x = d, y = sample.size)) +
+  geom_line() +
+  geom_point() +
+  theme_bw() +
+  theme_minimal() +
+  geom_hline(yintercept = 89.15, lty = 2, colour = "blue") +
+  ylab("Sample Size") +
+  scale_y_continuous(breaks = c(0, 100, 200, 300, 400, 500, 600, 700, 800)) +
+  xlab("Cohen's D (effect size)") +
+  scale_x_continuous(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) +
+  ggtitle("Op [classified]: Power curve to determine sample size")
+  
+```
+
+From the above power curve plot, it is possible to see a curved relationship where small effect sizes (i.e., detecting a small true difference between pre- and post- measures) would require relatively large sample sizes. A small effect (0.2) would require approximately n = 200 survey responses.
+
+Therefore, due to resourcing, it is suggested that a balance could be achieved if a sample size of n = 90 is collected. This would effectively detect a difference that has a relatively small effect size (0.3). 
+
+If a medium effect (0.5) is present in the pre-/post- measures, this would be detected at n = 34.
+
+If a large difference is present in the pre-/post- measures, this would be detected at n = 15. 
+
+Conclusion and Recommendation
+================================================================================
+
+Taking into consideration resourcing and criteria for statistical testing, a sample size of n = 90 returned surveys would be optimal. This is because it would maximise the opportunity of confidently finding a statistically significant difference within the pre- and post- measures, if there is a statistically significant difference to be found. However, at a minimum, n = 34 would allow for at least the detection of a medium sized difference in pre- and post- measures, is one exists. 
